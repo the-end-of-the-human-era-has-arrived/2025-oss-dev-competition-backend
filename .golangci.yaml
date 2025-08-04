@@ -1,0 +1,28 @@
+version: "2"
+linters:
+  exclusions:
+    paths:
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofumpt
+    - golines
+  exclusions:
+    paths:
+      - vendor
+      - third_party$
+      - builtin$
+      - examples$
+  settings:
+    gci:
+      sections:
+        - standard
+        - prefix(github.com/)
+        - localmodule
+        - default
+run:
+  timeout: 5m
