@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
+
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/server"
 )
 
 func main() {
-	log.Println(NewVersion().String())
-	fmt.Println("Hello World")
+	if err := server.NewCommand().Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
