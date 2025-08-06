@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/api"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
 )
 
@@ -17,7 +18,7 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func New(cfg *config.ServerConfig, opts ...option) (*Server, error) {
+func New(cfg *config.ServerConfig) (*Server, error) {
 	readTimeout, err := time.ParseDuration(cfg.ReadTimeout)
 	if err != nil {
 		return nil, err
@@ -44,19 +45,7 @@ func New(cfg *config.ServerConfig, opts ...option) (*Server, error) {
 		httpServer: httpSrv,
 	}
 
-	for _, o := range opts {
-		o(server)
-	}
-
 	return server, nil
-}
-
-type option func(*Server)
-
-func WithHandler(handler http.Handler) option {
-	return func(s *Server) {
-		s.httpServer.Handler = handler
-	}
 }
 
 func (s *Server) Start() error {
@@ -83,4 +72,15 @@ func (s *Server) Start() error {
 
 	log.Println("Server exiting")
 	return nil
+}
+
+func (s *Server) InstallAPIGroup(apigroups ...api.APIGroup) {
+	mux := api.NewAPIServeMux()
+
+	for _, group := range apigroups {
+		apis := group.ListAPIs()
+		mux.RegistAPI(apis...)
+	}
+
+	s.httpServer.Handler = mux
 }

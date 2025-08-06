@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/spf13/cobra"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/api"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/server"
 )
@@ -49,12 +50,26 @@ func (a *cli) execute(configPath string) error {
 		return err
 	}
 
-	server, err := server.New(cfg.Server, server.WithHandler(a.getVersionHandler()))
+	server, err := server.New(cfg.Server)
 	if err != nil {
 		return err
 	}
 
+	server.InstallAPIGroup(
+		api.NewSimpleAPI("/version", a.getVersionHandler()),
+		api.NewSimpleAPI("/error", a.getError()),
+	)
+
 	return server.Start()
+}
+
+func (a *cli) loadConfig(cfgFilePath string) (*config.AppConfig, error) {
+	cfg := config.Default()
+	if err := cfg.LoadConfig(cfgFilePath); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
 }
 
 func (a *cli) getVersionCommand() *cobra.Command {
@@ -72,22 +87,19 @@ func (a *cli) getVersionCommand() *cobra.Command {
 	}
 }
 
-func (a *cli) getVersionHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (a *cli) getVersionHandler() api.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(a.version); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			return err
 		}
+		return nil
 	}
 }
 
-func (a *cli) loadConfig(cfgFilePath string) (*config.AppConfig, error) {
-	cfg := config.Default()
-	if err := cfg.LoadConfig(cfgFilePath); err != nil {
-		return nil, err
+func (a *cli) getError() api.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		return api.NewError(http.StatusInternalServerError, api.WithMessage("error occurred in handler"))
 	}
-
-	return cfg, nil
 }
