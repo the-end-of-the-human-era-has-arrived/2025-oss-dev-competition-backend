@@ -2,3 +2,5 @@ bin/
 
 .vscode
 CLAUDE.md
+
+.env

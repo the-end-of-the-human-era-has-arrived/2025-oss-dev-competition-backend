@@ -1,15 +1,26 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"log"
+	"time"
 
-	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/server"
+	"github.com/joho/godotenv"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/application"
+)
+
+var (
+	version    = "unknown"
+	commitHash = "unknown"
+	buildDate  = time.Now().Format(time.RFC3339)
 )
 
 func main() {
-	if err := server.NewCommand().Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	_ = godotenv.Load()
+
+	ver := application.NewVersion(version, commitHash, buildDate)
+	app := application.NewCLI(ver)
+
+	if err := app.Execute(); err != nil {
+		log.Fatal(err)
 	}
 }

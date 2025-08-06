@@ -3,7 +3,9 @@ module github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-
 go 1.24.5
 
 require (
+	github.com/caarlos0/env/v11 v11.3.1
 	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.9.1
 )
 

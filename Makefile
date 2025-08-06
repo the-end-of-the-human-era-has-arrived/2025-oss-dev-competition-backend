@@ -1,4 +1,4 @@
-NAME := mindmap-server
+NAME := notion-mindmap-server
 GOOS ?= darwin
 GOARCH ?= arm64
 

@@ -10,41 +10,59 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/cobra"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
 )
 
 type Server struct {
-	host   string
-	port   string
-	server *http.Server
-	mux    *http.ServeMux
+	httpServer *http.Server
 }
 
-func NewServer(appCfg *AppConfig) *Server {
-	return &Server{
-		host: appCfg.Host,
-		port: appCfg.Port,
+func New(cfg *config.ServerConfig, opts ...option) (*Server, error) {
+	readTimeout, err := time.ParseDuration(cfg.ReadTimeout)
+	if err != nil {
+		return nil, err
 	}
+
+	writeTimeout, err := time.ParseDuration(cfg.WriteTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	idleTimeout, err := time.ParseDuration(cfg.WriteTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	httpSrv := &http.Server{
+		Addr:         fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
+		ReadTimeout:  readTimeout,
+		WriteTimeout: writeTimeout,
+		IdleTimeout:  idleTimeout,
+	}
+
+	server := &Server{
+		httpServer: httpSrv,
+	}
+
+	for _, o := range opts {
+		o(server)
+	}
+
+	return server, nil
 }
 
-func (s *Server) AddRoute(handlerMap map[string]func(http.ResponseWriter, *http.Request)) {
-	for path, handleFn := range handlerMap {
-		s.mux.HandleFunc(path, handleFn)
+type option func(*Server)
+
+func WithHandler(handler http.Handler) option {
+	return func(s *Server) {
+		s.httpServer.Handler = handler
 	}
 }
 
 func (s *Server) Start() error {
-	s.server = &http.Server{
-		Addr:         fmt.Sprintf("%s:%s", s.host, s.port),
-		Handler:      s.mux,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
-	}
-
 	go func() {
-		log.Printf("Starting server on %s:%s", s.host, s.port)
-		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("Starting server on %s", s.httpServer.Addr)
+		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}
 	}()
@@ -59,39 +77,10 @@ func (s *Server) Start() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := s.server.Shutdown(ctx); err != nil {
+	if err := s.httpServer.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown:", err)
 	}
 
 	log.Println("Server exiting")
 	return nil
-}
-
-func NewCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "mindmap-server",
-		Short: "A mindmap server application",
-		Long:  `A mindmap server application that manages keyword nodes and their relationships for creating mind maps.`,
-		RunE:  exec,
-	}
-
-	return cmd
-}
-
-func exec(cmd *cobra.Command, args []string) error {
-	var configPath string
-	cmd.Flags().StringVarP(&configPath, "config", "c", "config/config.json", "Path to the configuration file")
-
-	config := DefaultConfig()
-	if err := ReadConfig(config, configPath); err != nil {
-		return err
-	}
-
-	cmd.Flags().StringVarP(&config.Port, "port", "p", "8080", "Port to run the server on")
-	cmd.Flags().StringVarP(&config.Host, "host", "H", "0.0.0.0", "Host to bind the server to")
-
-	server := NewServer(config)
-	// TODO: AddRoute() Handler 추가
-
-	return server.Start()
 }
