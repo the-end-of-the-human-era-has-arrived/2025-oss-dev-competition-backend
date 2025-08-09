@@ -8,7 +8,10 @@ import (
 
 var (
 	ErrNotFound       = NewError(http.StatusNotFound, WithMessage("the request resource not found"))
-	ErrInternalServer = NewError(http.StatusInternalServerError, WithMessage("server something wrong"))
+	ErrInternalServer = NewError(
+		http.StatusInternalServerError,
+		WithMessage("server something wrong"),
+	)
 )
 
 type Error struct {

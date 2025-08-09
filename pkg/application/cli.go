@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/spf13/cobra"
+
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/api"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/controller"
@@ -34,7 +35,8 @@ func (a *cli) Execute() error {
 		RunE:  a.getRunErrorFn(&configPath),
 	}
 
-	cmd.Flags().StringVarP(&configPath, "config", "c", "config/config.json", "Path to the configuration file")
+	cmd.Flags().
+		StringVarP(&configPath, "config", "c", "config/config.json", "Path to the configuration file")
 
 	cmd.AddCommand(a.getVersionCommand())
 

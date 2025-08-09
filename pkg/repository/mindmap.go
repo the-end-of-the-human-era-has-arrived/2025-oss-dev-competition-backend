@@ -15,10 +15,10 @@ type MemoryMindMapRepo struct {
 	mu     sync.RWMutex
 	nodes  map[uuid.UUID]*domain.KeywordNode
 	edges  map[uuid.UUID]*domain.KeywordEdge
-	caches map[uuid.UUID]*cache
+	caches map[uuid.UUID]*mindmapCache
 }
 
-type cache struct {
+type mindmapCache struct {
 	mu               sync.RWMutex
 	deferedOperation []func()
 	nodes            map[uuid.UUID]*domain.KeywordNode
@@ -29,7 +29,7 @@ func NewMemoryMindMapRepo() *MemoryMindMapRepo {
 	return &MemoryMindMapRepo{
 		nodes:  make(map[uuid.UUID]*domain.KeywordNode, 1024),
 		edges:  make(map[uuid.UUID]*domain.KeywordEdge, 1024),
-		caches: make(map[uuid.UUID]*cache, 0),
+		caches: make(map[uuid.UUID]*mindmapCache, 0),
 	}
 }
 
@@ -52,7 +52,7 @@ func (r *MemoryMindMapRepo) BeginTransaction(ctx context.Context) {
 		edges[k] = v
 	}
 
-	r.caches[requestID] = &cache{
+	r.caches[requestID] = &mindmapCache{
 		deferedOperation: make([]func(), 0),
 		nodes:            nodes,
 		edges:            edges,
@@ -120,7 +120,10 @@ func (r *MemoryMindMapRepo) CreateKeywordNode(
 	return &copied, nil
 }
 
-func (r *MemoryMindMapRepo) CreateBulkKeywordNodes(ctx context.Context, bulks ...*domain.KeywordNode) ([]*domain.KeywordNode, error) {
+func (r *MemoryMindMapRepo) CreateBulkKeywordNodes(
+	ctx context.Context,
+	bulks ...*domain.KeywordNode,
+) ([]*domain.KeywordNode, error) {
 	requestID, ok := ctx.Value(api.RequestIDKey{}).(uuid.UUID)
 	if !ok {
 		return nil, errors.New("not found request id")
@@ -381,7 +384,10 @@ func (r *MemoryMindMapRepo) CreateKeywordEdge(
 	return &copied, nil
 }
 
-func (r *MemoryMindMapRepo) CreateBulkKeywordEdges(ctx context.Context, bulks ...*domain.KeywordEdge) ([]*domain.KeywordEdge, error) {
+func (r *MemoryMindMapRepo) CreateBulkKeywordEdges(
+	ctx context.Context,
+	bulks ...*domain.KeywordEdge,
+) ([]*domain.KeywordEdge, error) {
 	requestID, ok := ctx.Value(api.RequestIDKey{}).(uuid.UUID)
 	if !ok {
 		return nil, errors.New("not found request id")

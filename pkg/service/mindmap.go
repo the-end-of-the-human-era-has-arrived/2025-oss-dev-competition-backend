@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/domain"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/repository"
 )
@@ -18,7 +19,12 @@ func NewMindMapService(repo *repository.MemoryMindMapRepo) *MindMapService {
 	}
 }
 
-func (s *MindMapService) BuildMindMap(ctx context.Context, userID uuid.UUID, nodes []*domain.KeywordNode, edges []*domain.EdgeOfIndex) error {
+func (s *MindMapService) BuildMindMap(
+	ctx context.Context,
+	userID uuid.UUID,
+	nodes []*domain.KeywordNode,
+	edges []*domain.EdgeOfIndex,
+) error {
 	s.repo.BeginTransaction(ctx)
 	defer s.repo.Commit(ctx)
 
@@ -47,7 +53,10 @@ func (s *MindMapService) BuildMindMap(ctx context.Context, userID uuid.UUID, nod
 	return nil
 }
 
-func (s *MindMapService) GetMindMapByUser(ctx context.Context, userID uuid.UUID) *domain.MindMapGraph {
+func (s *MindMapService) GetMindMapByUser(
+	ctx context.Context,
+	userID uuid.UUID,
+) *domain.MindMapGraph {
 	mindmap := &domain.MindMapGraph{
 		UserID: userID,
 	}
