@@ -9,7 +9,6 @@ type KeywordNode struct {
 	UserID       uuid.UUID `json:"userID,omitempty"`
 	NotionPageID uuid.UUID `json:"notionPageID"`
 	Keyword      string    `json:"keyword"`
-	PageAbstract string    `json:"pageAbstract"`
 }
 
 type KeywordEdge struct {

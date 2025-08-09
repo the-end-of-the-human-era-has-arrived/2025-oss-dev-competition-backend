@@ -38,9 +38,6 @@ func (h *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	// TODO: 입력 값 재설계 필요
-	// node에 대한 정보와 노드 연결정보, 노드 연결 정보가 ID여서는 안된다. 서버 내부에서 ID를 할당하기 때문
-	// node를 저장하고 저장된 노드 ID를 알아야 Edge를 저장할 수 있음.
 	params := &struct {
 		Nodes []*domain.KeywordNode `json:"nodes"`
 		Edges []*domain.EdgeOfIndex `json:"edges"`
