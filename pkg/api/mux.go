@@ -1,8 +1,11 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type APIServeMux struct {
@@ -15,7 +18,18 @@ func NewAPIServeMux() *APIServeMux {
 	}
 }
 
+type RequestIDKey struct{}
+
 func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	requestID, err := uuid.NewRandom()
+	if err != nil {
+		http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), RequestIDKey{}, requestID)
+	r = r.WithContext(ctx)
+
 	if _, p := m.mux.Handler(r); p == "" {
 		http.Error(w, ErrNotFound.Error(), http.StatusNotFound)
 		return

@@ -1,0 +1,89 @@
+package controller
+
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/google/uuid"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/api"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/domain"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/service"
+)
+
+type mindMapController struct {
+	service *service.MindMapService
+}
+
+func NewMindMapController(service *service.MindMapService) *mindMapController {
+	return &mindMapController{
+		service: service,
+	}
+}
+
+var _ api.APIGroup = (*mindMapController)(nil)
+
+func (h *mindMapController) ListAPIs() []*api.API {
+	return []*api.API{
+		api.NewSimpleAPI("POST /api/users/{userID}/mindmap", h.createMindMap),
+		api.NewSimpleAPI("GET /api/users/{userID}/mindmap", h.getMindMap),
+		api.NewSimpleAPI("DELETE /api/users/{userID}/mindmap", h.deleteMindMap),
+	}
+}
+
+func (h *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request) error {
+	userID := r.PathValue("userID")
+
+	userUID, err := uuid.Parse(userID)
+	if err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	// TODO: 입력 값 재설계 필요
+	// node에 대한 정보와 노드 연결정보, 노드 연결 정보가 ID여서는 안된다. 서버 내부에서 ID를 할당하기 때문
+	// node를 저장하고 저장된 노드 ID를 알아야 Edge를 저장할 수 있음.
+	params := &struct {
+		Nodes []*domain.KeywordNode `json:"nodes"`
+		Edges []*domain.EdgeOfIndex `json:"edges"`
+	}{}
+	if err := json.NewDecoder(r.Body).Decode(params); err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	for _, e := range params.Edges {
+		if e.Idx1 < 0 || e.Idx2 < 0 || e.Idx1 >= len(params.Nodes) || e.Idx2 >= len(params.Nodes) {
+			return api.NewError(http.StatusBadRequest, api.WithMessage("invalid index"))
+		}
+	}
+
+	if err := h.service.BuildMindMap(r.Context(), userUID, params.Nodes, params.Edges); err != nil {
+		return api.NewError(http.StatusInternalServerError, api.WithError(err))
+	}
+	return api.ResponseStatusCode(w, http.StatusCreated, "success to create mindmap")
+}
+
+func (h *mindMapController) getMindMap(w http.ResponseWriter, r *http.Request) error {
+	userID := r.PathValue("userID")
+
+	userUID, err := uuid.Parse(userID)
+	if err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	graph := h.service.GetMindMapByUser(r.Context(), userUID)
+
+	return api.ResponseJSON(w, graph)
+}
+
+func (h *mindMapController) deleteMindMap(w http.ResponseWriter, r *http.Request) error {
+	userID := r.PathValue("userID")
+
+	userUID, err := uuid.Parse(userID)
+	if err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	if err := h.service.DeleteMindMapByUser(r.Context(), userUID); err != nil {
+		return api.NewError(http.StatusInternalServerError, api.WithError(err))
+	}
+	return api.ResponseStatusCode(w, http.StatusOK, "success to delete mindmap")
+}

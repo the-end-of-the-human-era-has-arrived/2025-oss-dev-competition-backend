@@ -8,7 +8,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/api"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/controller"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/repository"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/server"
+	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/service"
 )
 
 type cli struct {
@@ -55,9 +58,13 @@ func (a *cli) execute(configPath string) error {
 		return err
 	}
 
+	mindMapRepo := repository.NewMemoryMindMapRepo()
+	mindMapSvc := service.NewMindMapService(mindMapRepo)
+	mindMapAPIGroup := controller.NewMindMapController(mindMapSvc)
+
 	server.InstallAPIGroup(
 		api.NewSimpleAPI("/version", a.getVersionHandler()),
-		api.NewSimpleAPI("/error", a.getError()),
+		mindMapAPIGroup,
 	)
 
 	return server.Start()
@@ -95,11 +102,5 @@ func (a *cli) getVersionHandler() api.HandlerFunc {
 			return err
 		}
 		return nil
-	}
-}
-
-func (a *cli) getError() api.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		return api.NewError(http.StatusInternalServerError, api.WithMessage("error occurred in handler"))
 	}
 }
