@@ -18,22 +18,43 @@ func NewAPIServeMux() *APIServeMux {
 	}
 }
 
-type RequestIDKey struct{}
+type (
+	RequestIDKey struct{}
+	SessionKey   struct{}
+)
 
 func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	switch _, p := m.mux.Handler(r); p {
+	case "":
+		ErrNotFound.WriteHTTPError(w)
+		return
+	case "/auth/notion", "/auth/notion/callback":
+		m.mux.ServeHTTP(w, r)
+		return
+	}
+
+	cookie, err := r.Cookie("sessionID")
+	if err != nil {
+		NewError(http.StatusUnauthorized, WithError(err)).WriteHTTPError(w)
+		return
+	}
+
+	session, ok := SessionStore.Get(cookie.Value)
+	if !ok {
+		ErrNoSession.WriteHTTPError(w)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), SessionKey{}, session)
+
 	requestID, err := uuid.NewRandom()
 	if err != nil {
-		http.Error(w, ErrInternalServer.Error(), http.StatusInternalServerError)
+		ErrFailToCreateRequestID.WriteHTTPError(w)
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), RequestIDKey{}, requestID)
+	ctx = context.WithValue(ctx, RequestIDKey{}, requestID)
 	r = r.WithContext(ctx)
-
-	if _, p := m.mux.Handler(r); p == "" {
-		http.Error(w, ErrNotFound.Error(), http.StatusNotFound)
-		return
-	}
 
 	m.mux.ServeHTTP(w, r)
 }
@@ -49,7 +70,7 @@ func WithErrorHandler(handlerFn HandlerFunc) func(w http.ResponseWriter, r *http
 		apiError := &Error{}
 		err := handlerFn(w, r)
 		if errors.As(err, apiError) {
-			http.Error(w, apiError.Error(), apiError.StatusCode())
+			apiError.WriteHTTPError(w)
 			return
 		}
 		if err != nil {

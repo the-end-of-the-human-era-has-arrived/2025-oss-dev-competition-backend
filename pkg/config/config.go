@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/gorilla/securecookie"
 )
 
 type AppConfig struct {
@@ -20,6 +21,7 @@ type ServerConfig struct {
 	ReadTimeout  string `json:"readTimeout,omitempty"`
 	WriteTimeout string `json:"writeTimeout,omitempty"`
 	IdleTimeout  string `json:"idleTimeout,omitempty"`
+	SessionKey   string `env:"SESSION_KEY"`
 }
 
 type LogConfig struct {
@@ -50,6 +52,7 @@ func Default() *AppConfig {
 		ReadTimeout:  "15s",
 		WriteTimeout: "15s",
 		IdleTimeout:  "60s",
+		SessionKey:   string(securecookie.GenerateRandomKey(32)),
 	}
 
 	log := &LogConfig{

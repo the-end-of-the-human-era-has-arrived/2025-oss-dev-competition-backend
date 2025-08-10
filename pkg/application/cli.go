@@ -64,9 +64,14 @@ func (a *cli) execute(configPath string) error {
 	mindMapSvc := service.NewMindMapService(mindMapRepo)
 	mindMapAPIGroup := controller.NewMindMapController(mindMapSvc)
 
+	userRepo := repository.NewMemoryUserRepo()
+	userSvc := service.NewUserService(userRepo)
+	userAPIGroup := controller.NewUserController(userSvc)
+
 	server.InstallAPIGroup(
 		api.NewSimpleAPI("/version", a.getVersionHandler()),
 		mindMapAPIGroup,
+		userAPIGroup,
 	)
 
 	return server.Start()

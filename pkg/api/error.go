@@ -7,11 +7,16 @@ import (
 )
 
 var (
-	ErrNotFound       = NewError(http.StatusNotFound, WithMessage("the request resource not found"))
-	ErrInternalServer = NewError(
-		http.StatusInternalServerError,
-		WithMessage("server something wrong"),
+	ErrNotFound = NewError(
+		http.StatusNotFound,
+		WithMessage("the request resource not found"),
 	)
+	ErrFailToCreateRequestID = NewError(
+		http.StatusInternalServerError,
+		WithMessage("fail to create request id"),
+	)
+	ErrInvalidSession = NewError(http.StatusUnauthorized, WithMessage("invalid session"))
+	ErrNoSession      = NewError(http.StatusUnauthorized, WithMessage("no session"))
 )
 
 type Error struct {
@@ -72,4 +77,8 @@ func (e Error) MarshalJSON() ([]byte, error) {
 		StatusText: http.StatusText(e.statusCode),
 		Msg:        e.message,
 	})
+}
+
+func (e Error) WriteHTTPError(w http.ResponseWriter) {
+	http.Error(w, e.Error(), e.statusCode)
 }

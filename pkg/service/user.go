@@ -19,11 +19,12 @@ func NewUserService(repo *repository.MemoryUserRepo) *UserService {
 	}
 }
 
-func (s *UserService) CreateUser(ctx context.Context, user *domain.User) error {
-	if _, err := s.repo.CreateUser(ctx, user); err != nil {
-		return err
+func (s *UserService) CreateUser(ctx context.Context, user *domain.User) (uuid.UUID, error) {
+	user, err := s.repo.CreateUser(ctx, user)
+	if err != nil {
+		return uuid.Nil, err
 	}
-	return nil
+	return user.ID, nil
 }
 
 func (s *UserService) GetUser(ctx context.Context, id uuid.UUID) (*domain.User, error) {

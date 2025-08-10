@@ -23,20 +23,25 @@ func NewMindMapController(service *service.MindMapService) *mindMapController {
 
 var _ api.APIGroup = (*mindMapController)(nil)
 
-func (h *mindMapController) ListAPIs() []*api.API {
+func (c *mindMapController) ListAPIs() []*api.API {
 	return []*api.API{
-		api.NewSimpleAPI("POST /api/users/{userID}/mindmap", h.createMindMap),
-		api.NewSimpleAPI("GET /api/users/{userID}/mindmap", h.getMindMap),
-		api.NewSimpleAPI("DELETE /api/users/{userID}/mindmap", h.deleteMindMap),
+		api.NewSimpleAPI("POST /api/users/{userID}/mindmap", c.createMindMap),
+		api.NewSimpleAPI("GET /api/users/{userID}/mindmap", c.getMindMap),
+		api.NewSimpleAPI("DELETE /api/users/{userID}/mindmap", c.deleteMindMap),
 	}
 }
 
-func (h *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request) error {
+func (c *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request) error {
 	userID := r.PathValue("userID")
 
 	userUID, err := uuid.Parse(userID)
 	if err != nil {
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	if session.UserID != userUID {
+		return api.ErrInvalidSession
 	}
 
 	params := &struct {
@@ -53,13 +58,13 @@ func (h *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if err := h.service.BuildMindMap(r.Context(), userUID, params.Nodes, params.Edges); err != nil {
+	if err := c.service.BuildMindMap(r.Context(), userUID, params.Nodes, params.Edges); err != nil {
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 	return api.ResponseStatusCode(w, http.StatusCreated, "success to create mindmap")
 }
 
-func (h *mindMapController) getMindMap(w http.ResponseWriter, r *http.Request) error {
+func (c *mindMapController) getMindMap(w http.ResponseWriter, r *http.Request) error {
 	userID := r.PathValue("userID")
 
 	userUID, err := uuid.Parse(userID)
@@ -67,12 +72,17 @@ func (h *mindMapController) getMindMap(w http.ResponseWriter, r *http.Request) e
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	graph := h.service.GetMindMapByUser(r.Context(), userUID)
+	session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	if session.UserID != userUID {
+		return api.ErrInvalidSession
+	}
+
+	graph := c.service.GetMindMapByUser(r.Context(), userUID)
 
 	return api.ResponseJSON(w, graph)
 }
 
-func (h *mindMapController) deleteMindMap(w http.ResponseWriter, r *http.Request) error {
+func (c *mindMapController) deleteMindMap(w http.ResponseWriter, r *http.Request) error {
 	userID := r.PathValue("userID")
 
 	userUID, err := uuid.Parse(userID)
@@ -80,7 +90,12 @@ func (h *mindMapController) deleteMindMap(w http.ResponseWriter, r *http.Request
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	if err := h.service.DeleteMindMapByUser(r.Context(), userUID); err != nil {
+	session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	if session.UserID != userUID {
+		return api.ErrInvalidSession
+	}
+
+	if err := c.service.DeleteMindMapByUser(r.Context(), userUID); err != nil {
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 	return api.ResponseStatusCode(w, http.StatusOK, "success to delete mindmap")
