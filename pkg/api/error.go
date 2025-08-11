@@ -41,12 +41,18 @@ type option func(*Error)
 
 func WithError(err error) option {
 	return func(e *Error) {
-		e.message = err.Error()
+		if e.message != "" {
+			e.message += ": "
+		}
+		e.message += err.Error()
 	}
 }
 
 func WithMessage(msg string) option {
 	return func(e *Error) {
+		if e.message != "" {
+			e.message += ": "
+		}
 		e.message = msg
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/controller"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/repository"
-	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/server"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/service"
 )
 
@@ -55,7 +54,15 @@ func (a *cli) execute(configPath string) error {
 		return err
 	}
 
-	server, err := server.New(cfg.Server)
+	server, err := api.NewServer(cfg.Server)
+	if err != nil {
+		return err
+	}
+	userRepo := repository.NewMemoryUserRepo()
+	userSvc := service.NewUserService(userRepo)
+	userAPIGroup := controller.NewUserController(userSvc)
+
+	authAPIGroup, err := controller.NewAuthController(userSvc, cfg.OAuth)
 	if err != nil {
 		return err
 	}
@@ -64,14 +71,11 @@ func (a *cli) execute(configPath string) error {
 	mindMapSvc := service.NewMindMapService(mindMapRepo)
 	mindMapAPIGroup := controller.NewMindMapController(mindMapSvc)
 
-	userRepo := repository.NewMemoryUserRepo()
-	userSvc := service.NewUserService(userRepo)
-	userAPIGroup := controller.NewUserController(userSvc)
-
 	server.InstallAPIGroup(
-		api.NewSimpleAPI("/version", a.getVersionHandler()),
+		api.NewSimpleAPI("GET /version", a.getVersionHandler()),
 		mindMapAPIGroup,
 		userAPIGroup,
+		authAPIGroup,
 	)
 
 	return server.Start()

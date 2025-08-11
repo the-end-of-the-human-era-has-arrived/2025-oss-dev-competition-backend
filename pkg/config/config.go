@@ -1,11 +1,12 @@
 package config
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/caarlos0/env/v11"
-	"github.com/gorilla/securecookie"
 )
 
 type AppConfig struct {
@@ -21,7 +22,6 @@ type ServerConfig struct {
 	ReadTimeout  string `json:"readTimeout,omitempty"`
 	WriteTimeout string `json:"writeTimeout,omitempty"`
 	IdleTimeout  string `json:"idleTimeout,omitempty"`
-	SessionKey   string `env:"SESSION_KEY"`
 }
 
 type LogConfig struct {
@@ -31,7 +31,7 @@ type LogConfig struct {
 type OAuthConfig struct {
 	ClientID     string `env:"OAUTH_CLIENT_ID"`
 	ClientSecret string `env:"OAUTH_CLIENT_SECRET"`
-	RedirectURL  string `env:"OAUTH_REDIRECT_URL"`
+	State        string `env:"STATE"`
 }
 
 // TODO: Database 구성 검토 필요
@@ -52,14 +52,19 @@ func Default() *AppConfig {
 		ReadTimeout:  "15s",
 		WriteTimeout: "15s",
 		IdleTimeout:  "60s",
-		SessionKey:   string(securecookie.GenerateRandomKey(32)),
 	}
 
 	log := &LogConfig{
 		Level: "info",
 	}
 
-	oauth := &OAuthConfig{}
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		buf = []byte("random-state-string")
+	}
+	oauth := &OAuthConfig{
+		State: fmt.Sprintf("%x", buf),
+	}
 	db := &DBConfig{}
 
 	return &AppConfig{

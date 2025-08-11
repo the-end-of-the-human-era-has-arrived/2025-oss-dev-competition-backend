@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/api"
 	"github.com/the-end-of-the-human-era-has-arrived/2025-oss-dev-competition-backend/pkg/config"
 )
 
@@ -18,7 +17,7 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func New(cfg *config.ServerConfig) (*Server, error) {
+func NewServer(cfg *config.ServerConfig) (*Server, error) {
 	readTimeout, err := time.ParseDuration(cfg.ReadTimeout)
 	if err != nil {
 		return nil, err
@@ -39,6 +38,7 @@ func New(cfg *config.ServerConfig) (*Server, error) {
 		ReadTimeout:  readTimeout,
 		WriteTimeout: writeTimeout,
 		IdleTimeout:  idleTimeout,
+		Handler:      newAPIServeMux(),
 	}
 
 	server := &Server{
@@ -74,13 +74,11 @@ func (s *Server) Start() error {
 	return nil
 }
 
-func (s *Server) InstallAPIGroup(apigroups ...api.APIGroup) {
-	mux := api.NewAPIServeMux()
+func (s *Server) InstallAPIGroup(apigroups ...APIGroup) {
+	mux := s.httpServer.Handler.(*APIServeMux)
 
 	for _, group := range apigroups {
 		apis := group.ListAPIs()
 		mux.RegistAPI(apis...)
 	}
-
-	s.httpServer.Handler = mux
 }

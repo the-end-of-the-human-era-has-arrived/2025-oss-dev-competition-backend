@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -12,7 +13,7 @@ type APIServeMux struct {
 	mux *http.ServeMux
 }
 
-func NewAPIServeMux() *APIServeMux {
+func newAPIServeMux() *APIServeMux {
 	return &APIServeMux{
 		mux: http.NewServeMux(),
 	}
@@ -24,11 +25,22 @@ type (
 )
 
 func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch _, p := m.mux.Handler(r); p {
-	case "":
+	_, p := m.mux.Handler(r)
+	if p == "" {
 		ErrNotFound.WriteHTTPError(w)
 		return
-	case "/auth/notion", "/auth/notion/callback":
+	}
+
+	requestID, err := uuid.NewRandom()
+	if err != nil {
+		ErrFailToCreateRequestID.WriteHTTPError(w)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), RequestIDKey{}, requestID)
+
+	path := strings.Split(p, " ")[1]
+	if !strings.HasPrefix(path, "/api") {
 		m.mux.ServeHTTP(w, r)
 		return
 	}
@@ -45,15 +57,7 @@ func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(r.Context(), SessionKey{}, session)
-
-	requestID, err := uuid.NewRandom()
-	if err != nil {
-		ErrFailToCreateRequestID.WriteHTTPError(w)
-		return
-	}
-
-	ctx = context.WithValue(ctx, RequestIDKey{}, requestID)
+	ctx = context.WithValue(ctx, SessionKey{}, session)
 	r = r.WithContext(ctx)
 
 	m.mux.ServeHTTP(w, r)

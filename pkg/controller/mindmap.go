@@ -39,8 +39,8 @@ func (c *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
+	session, ok := r.Context().Value(api.SessionKey{}).(*api.Session)
+	if !ok || session.UserID != userUID {
 		return api.ErrInvalidSession
 	}
 
