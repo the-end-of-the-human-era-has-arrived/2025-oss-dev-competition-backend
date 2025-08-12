@@ -29,9 +29,11 @@ type LogConfig struct {
 }
 
 type OAuthConfig struct {
-	ClientID     string `env:"OAUTH_CLIENT_ID"`
-	ClientSecret string `env:"OAUTH_CLIENT_SECRET"`
-	State        string `env:"STATE"`
+	ClientID       string `env:"OAUTH_CLIENT_ID"`
+	ClientSecret   string `env:"OAUTH_CLIENT_SECRET"`
+	State          string `env:"STATE"`
+	RedirectURI    string `env:"OAUTH_REDIRECT_URI"`
+	FrontendOrigin string `env:"FRONTEND_ORIGIN"`
 }
 
 // TODO: Database 구성 검토 필요
@@ -64,6 +66,8 @@ func Default() *AppConfig {
 	}
 	oauth := &OAuthConfig{
 		State: fmt.Sprintf("%x", buf),
+		RedirectURI:    "http://localhost:8080/auth/notion/callback",
+		FrontendOrigin: "http://localhost:3000",
 	}
 	db := &DBConfig{}
 

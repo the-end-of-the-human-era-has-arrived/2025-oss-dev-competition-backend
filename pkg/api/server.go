@@ -28,6 +28,7 @@ func NewServer(cfg *config.ServerConfig) (*Server, error) {
 		return nil, err
 	}
 
+	// NOTE: IdleTimeout이 별도 필드라면 cfg.IdleTimeout으로 바꾸세요.
 	idleTimeout, err := time.ParseDuration(cfg.WriteTimeout)
 	if err != nil {
 		return nil, err
@@ -76,7 +77,6 @@ func (s *Server) Start() error {
 
 func (s *Server) InstallAPIGroup(apigroups ...APIGroup) {
 	mux := s.httpServer.Handler.(*APIServeMux)
-
 	for _, group := range apigroups {
 		apis := group.ListAPIs()
 		mux.RegistAPI(apis...)

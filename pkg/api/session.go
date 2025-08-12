@@ -62,3 +62,6 @@ type Token struct {
 	BotID         string `json:"botID"`
 	WorkspaceName string `json:"workspaceName"`
 }
+
+// 컨트롤러/미들웨어에서 컨텍스트로 세션을 주고받는 키
+type SessionKey struct{}
