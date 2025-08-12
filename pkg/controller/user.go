@@ -52,7 +52,7 @@ func (c *userController) createUser(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	session.UserID = id
-	api.SessionStore.Set(session.NotionUserID.String(), session)
+	api.SessionStore.Set(id.String(), session)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "userID",
 		Value:    id.String(),
@@ -127,8 +127,8 @@ func (c *userController) updateUserTokens(w http.ResponseWriter, r *http.Request
 	}
 
 	param := &struct {
-		AccessToken  string `json:"accessToken"`
-		RefreshToken string `json:"refreshToken"`
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
 	}{}
 	if err := json.NewDecoder(r.Body).Decode(param); err != nil {
 		return api.NewError(http.StatusBadRequest, api.WithError(err))

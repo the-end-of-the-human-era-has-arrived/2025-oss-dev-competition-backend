@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	authURL  = "https://api.notion.com/v1/oauth/authorize"
 	tokenURL = "https://api.notion.com/v1/oauth/token"
 )
 
@@ -28,6 +27,7 @@ type authController struct {
 	service      *service.UserService
 	clientID     string
 	clientSecret string
+	authURL      string
 	state        string
 }
 
@@ -43,6 +43,7 @@ func NewAuthController(
 		service:      service,
 		clientID:     cfg.ClientID,
 		clientSecret: cfg.ClientSecret,
+		authURL:      cfg.AuthURL,
 		state:        cfg.State,
 	}, nil
 }
@@ -58,7 +59,7 @@ func (c *authController) ListAPIs() []*api.API {
 }
 
 func (c *authController) processNotionAuth(w http.ResponseWriter, r *http.Request) error {
-	aURL, err := url.Parse(authURL)
+	aURL, err := url.Parse(c.authURL)
 	if err != nil {
 		return api.NewError(
 			http.StatusInternalServerError,
@@ -68,10 +69,6 @@ func (c *authController) processNotionAuth(w http.ResponseWriter, r *http.Reques
 	}
 
 	q := aURL.Query()
-	q.Set("owner", "user")
-	q.Set("client_id", c.clientID)
-	q.Set("redirect_uri", fmt.Sprintf("http://%s/auth/notion/callback", r.Host))
-	q.Set("response_type", "code")
 	q.Set("state", c.state)
 	aURL.RawQuery = q.Encode()
 
@@ -102,21 +99,15 @@ func (c *authController) processNotionAuthCallback(w http.ResponseWriter, r *htt
 		)
 	}
 
-	nUsers, err := c.getNotionUsers(tok.AccessToken)
+	user, err := c.getNotionUser(tok.AccessToken)
 	if err != nil {
 		return api.NewError(
 			http.StatusInternalServerError,
-			api.WithMessage("fail to get notion users"),
+			api.WithMessage("fail to get notion user"),
 			api.WithError(err),
 		)
 	}
-	var notionUserID uuid.UUID
-	for _, user := range nUsers {
-		if user.Type == "person" {
-			notionUserID = uuid.MustParse(user.ID)
-			break
-		}
-	}
+	notionUserID := uuid.MustParse(user.ID)
 
 	requestID, err := uuid.NewRandom()
 	if err != nil {
@@ -125,7 +116,7 @@ func (c *authController) processNotionAuthCallback(w http.ResponseWriter, r *htt
 	ctx := context.WithValue(r.Context(), api.RequestIDKey{}, requestID)
 
 	id, err := c.service.CreateUser(ctx, &domain.User{
-		Nickname:     "user-" + uuid.NewString()[:8],
+		Nickname:     user.Name,
 		NotionUserID: notionUserID,
 		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
@@ -134,18 +125,17 @@ func (c *authController) processNotionAuthCallback(w http.ResponseWriter, r *htt
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
+	// 세션 생성 및 저장
 	session := &api.Session{
 		UserID:       id,
 		NotionUserID: notionUserID,
 		Token:        tok,
 	}
 
-	// 세션 생성 및 저장
-	sessionID := uuid.NewString()
-	api.SessionStore.Set(sessionID, session)
+	api.SessionStore.Set(id.String(), session)
 	http.SetCookie(w, &http.Cookie{
 		Name:     "sessionID",
-		Value:    sessionID,
+		Value:    id.String(),
 		Path:     "/",
 		HttpOnly: true,
 	})
@@ -190,23 +180,29 @@ func (c *authController) requestToken(code, redirectURI string) (*api.Token, err
 type notionUser struct {
 	Object string `json:"object"`
 	ID     string `json:"id"`
+	Name   string `json:"name"`
 	Type   string `json:"type"`
 	Person struct {
 		Email string `json:"email"`
 	} `json:"person"`
-	Name      string `json:"name"`
-	AvatarURL string `json:"avatar_url"`
 }
 
 type notionUserResp struct {
-	Object     string       `json:"object"`
-	Results    []notionUser `json:"results"`
-	NextCursor string       `json:"next_cursor"`
-	HasMore    bool         `json:"has_more"`
+	Object    string `json:"object"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	AvatarURL string `json:"avatar_url"`
+	Type      string `json:"type"`
+	Bot       struct {
+		Owner struct {
+			Type string      `json:"type"`
+			User *notionUser `json:"user"`
+		} `json:"owner"`
+	} `json:"bot"`
 }
 
-func (c *authController) getNotionUsers(accessToken string) ([]notionUser, error) {
-	req, err := http.NewRequest("GET", "https://api.notion.com/v1/users", nil)
+func (c *authController) getNotionUser(accessToken string) (*notionUser, error) {
+	req, err := http.NewRequest("GET", "https://api.notion.com/v1/users/me", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -225,24 +221,16 @@ func (c *authController) getNotionUsers(accessToken string) ([]notionUser, error
 	}
 	defer resp.Body.Close()
 
-	return data.Results, nil
+	return data.Bot.Owner.User, nil
 }
 
 func (c *authController) getSessionStatus(w http.ResponseWriter, r *http.Request) error {
-	sessionID, err := r.Cookie("sessionID")
-	if err != nil {
-		return api.NewError(http.StatusUnauthorized, api.WithMessage("no session found"))
-	}
-
-	session, exists := api.SessionStore.Get(sessionID.Value)
-	if !exists || session == nil {
-		return api.NewError(http.StatusUnauthorized, api.WithMessage("invalid session"))
-	}
+	session := r.Context().Value(api.SessionKey{}).(*api.Session)
 
 	response := map[string]interface{}{
-		"authenticated": true,
-		"userID":        session.UserID,
-		"notionUserID":  session.NotionUserID,
+		"authenticated":  true,
+		"user_id":        session.UserID,
+		"notion_user_id": session.NotionUserID,
 	}
 
 	return api.ResponseJSON(w, response)

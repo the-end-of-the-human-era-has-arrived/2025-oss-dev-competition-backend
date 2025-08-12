@@ -6,14 +6,14 @@ import (
 
 type KeywordNode struct {
 	ID           uuid.UUID `json:"id,omitempty"`
-	UserID       uuid.UUID `json:"userID,omitempty"`
-	NotionPageID uuid.UUID `json:"notionPageID"`
+	UserID       uuid.UUID `json:"user_id,omitempty"`
+	NotionPageID uuid.UUID `json:"notion_page_id,omitempty"`
 	Keyword      string    `json:"keyword"`
 }
 
 type KeywordEdge struct {
 	ID       uuid.UUID `json:"id,omitempty"`
-	UserID   uuid.UUID `json:"userID,omitempty"`
+	UserID   uuid.UUID `json:"user_id,omitempty"`
 	Keyword1 uuid.UUID `json:"keyword1"`
 	Keyword2 uuid.UUID `json:"keyword2"`
 }
@@ -24,7 +24,7 @@ type EdgeOfIndex struct {
 }
 
 type MindMapGraph struct {
-	UserID uuid.UUID      `json:"userID"`
+	UserID uuid.UUID      `json:"user_id"`
 	Nodes  []*KeywordNode `json:"nodes"`
 	Edges  []*KeywordEdge `json:"edges"`
 }

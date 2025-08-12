@@ -31,6 +31,7 @@ type LogConfig struct {
 type OAuthConfig struct {
 	ClientID     string `env:"OAUTH_CLIENT_ID"`
 	ClientSecret string `env:"OAUTH_CLIENT_SECRET"`
+	AuthURL      string `env:"AUTH_URL"`
 	State        string `env:"STATE"`
 }
 

@@ -17,7 +17,8 @@ var SessionStore = &inMemoryStore{
 // var SessionStore = &inMemoryStore{
 // 	store: map[string]*Session{
 // 		"3aeac03f-0645-4d10-a334-a5905c031c12": {
-// 			NotionUserID: uuid.MustParse("3aeac03f-0645-4d10-a334-a5905c031c12"),
+// 			UserID:       uuid.MustParse("3aeac03f-0645-4d10-a334-a5905c031c12"),
+// 			NotionUserID: uuid.MustParse("97811864-e95f-41ee-8faf-e5dfce7d0326"),
 // 			Token: &Token{
 // 				AccessToken:   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lI",
 // 				RefreshToken:  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lI",
@@ -51,14 +52,14 @@ func (s *inMemoryStore) Set(key string, session *Session) {
 }
 
 type Session struct {
-	UserID       uuid.UUID `json:"userID"`
-	NotionUserID uuid.UUID `json:"notionUserID"`
+	UserID       uuid.UUID `json:"user_id"`
+	NotionUserID uuid.UUID `json:"notion_user_id"`
 	Token        *Token    `json:"token"`
 }
 
 type Token struct {
-	AccessToken   string `json:"accessToken"`
-	RefreshToken  string `json:"refreshToken"`
-	BotID         string `json:"botID"`
-	WorkspaceName string `json:"workspaceName"`
+	AccessToken   string `json:"access_token"`
+	RefreshToken  string `json:"refresh_token"`
+	BotID         string `json:"bot_id"`
+	WorkspaceName string `json:"workspace_name"`
 }

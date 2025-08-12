@@ -25,8 +25,9 @@ type (
 )
 
 func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, p := m.mux.Handler(r)
-	if p == "" {
+	_, pattern := m.mux.Handler(r)
+	path := extractPath(pattern)
+	if path == "" {
 		ErrNotFound.WriteHTTPError(w)
 		return
 	}
@@ -39,7 +40,6 @@ func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.WithValue(r.Context(), RequestIDKey{}, requestID)
 
-	path := strings.Split(p, " ")[1]
 	if !strings.HasPrefix(path, "/api") {
 		m.mux.ServeHTTP(w, r)
 		return
@@ -82,4 +82,11 @@ func WithErrorHandler(handlerFn HandlerFunc) func(w http.ResponseWriter, r *http
 			return
 		}
 	}
+}
+
+func extractPath(pattern string) string {
+	if i := strings.Index(pattern, " "); i != -1 {
+		return pattern[i+1:]
+	}
+	return pattern
 }
