@@ -71,11 +71,16 @@ func (a *cli) execute(configPath string) error {
 	mindMapSvc := service.NewMindMapService(mindMapRepo)
 	mindMapAPIGroup := controller.NewMindMapController(mindMapSvc)
 
+	notionPageRepo := repository.NewMemoryNotionPageRepo()
+	notionPageSvc := service.NewNotionPageService(notionPageRepo)
+	notionPageAPIGroup := controller.NewNotionPageController(notionPageSvc)
+
 	server.InstallAPIGroup(
 		api.NewSimpleAPI("GET /version", a.getVersionHandler()),
 		mindMapAPIGroup,
 		userAPIGroup,
 		authAPIGroup,
+		notionPageAPIGroup,
 	)
 
 	return server.Start()
