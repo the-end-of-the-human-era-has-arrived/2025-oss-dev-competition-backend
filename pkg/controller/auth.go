@@ -59,7 +59,8 @@ func (c *authController) ListAPIs() []*api.API {
 }
 
 func (c *authController) processNotionAuth(w http.ResponseWriter, r *http.Request) error {
-	aURL, err := url.Parse(c.authURL)
+	authURL := "https://api.notion.com/v1/oauth/authorize"
+	aURL, err := url.Parse(authURL)
 	if err != nil {
 		return api.NewError(
 			http.StatusInternalServerError,
@@ -69,6 +70,10 @@ func (c *authController) processNotionAuth(w http.ResponseWriter, r *http.Reques
 	}
 
 	q := aURL.Query()
+	q.Set("client_id", c.clientID)
+	q.Set("response_type", "code")
+	q.Set("owner", "user")
+	q.Set("redirect_uri", fmt.Sprintf("http://%s/auth/notion/callback", r.Host))
 	q.Set("state", c.state)
 	aURL.RawQuery = q.Encode()
 
