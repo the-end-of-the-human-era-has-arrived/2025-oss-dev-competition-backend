@@ -145,7 +145,8 @@ func (c *authController) processNotionAuthCallback(w http.ResponseWriter, r *htt
 		HttpOnly: true,
 	})
 
-	return api.ResponseStatusCode(w, http.StatusOK, "success to login")
+    http.Redirect(w, r, "http://localhost:3000/?auth=success", http.StatusTemporaryRedirect)
+    return nil
 }
 
 func (c *authController) requestToken(code, redirectURI string) (*api.Token, error) {
