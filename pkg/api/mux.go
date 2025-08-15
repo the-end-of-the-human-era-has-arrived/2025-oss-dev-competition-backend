@@ -25,6 +25,18 @@ type (
 )
 
 func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    // CORS 헤더 설정 (모든 요청에 적용)
+    w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+    w.Header().Set("Access-Control-Allow-Credentials", "true")
+    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+    // OPTIONS 요청 (preflight) 처리
+    if r.Method == "OPTIONS" {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
 	_, pattern := m.mux.Handler(r)
 	path := extractPath(pattern)
 	if path == "" {
