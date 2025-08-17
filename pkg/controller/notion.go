@@ -41,10 +41,10 @@ func (c *notionPageController) createNotionPage(w http.ResponseWriter, r *http.R
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	param := &domain.NotionPage{}
 	if err := json.NewDecoder(r.Body).Decode(param); err != nil {
@@ -70,10 +70,10 @@ func (c *notionPageController) getAllNotionPages(w http.ResponseWriter, r *http.
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	pages, err := c.service.GetAllNotionPagesByUser(r.Context(), userUID)
 	if err != nil {
@@ -97,10 +97,10 @@ func (c *notionPageController) getNotionPage(w http.ResponseWriter, r *http.Requ
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	page, err := c.service.GetNotionPageByID(r.Context(), notionPageUID)
 	if err != nil {
@@ -128,10 +128,10 @@ func (c *notionPageController) updateNotionPage(w http.ResponseWriter, r *http.R
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	param := &domain.NotionPage{}
 	if err := json.NewDecoder(r.Body).Decode(param); err != nil {
@@ -164,10 +164,10 @@ func (c *notionPageController) deleteNotionPage(w http.ResponseWriter, r *http.R
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	page, err := c.service.DeleteNotionPageByID(r.Context(), notionPageUID)
 	if err != nil {

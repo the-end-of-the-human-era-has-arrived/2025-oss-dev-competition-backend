@@ -72,10 +72,10 @@ func (c *userController) getUser(w http.ResponseWriter, r *http.Request) error {
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	user, err := c.service.GetUser(r.Context(), userUID)
 	if err != nil {
@@ -93,10 +93,10 @@ func (c *userController) updateUser(w http.ResponseWriter, r *http.Request) erro
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	param := &struct {
 		Nickname string `json:"nickname"`
@@ -121,10 +121,10 @@ func (c *userController) updateUserTokens(w http.ResponseWriter, r *http.Request
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	param := &struct {
 		AccessToken  string `json:"access_token"`
@@ -150,10 +150,10 @@ func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) erro
 		return api.NewError(http.StatusBadRequest, api.WithError(err))
 	}
 
-	session := r.Context().Value(api.SessionKey{}).(*api.Session)
-	if session.UserID != userUID {
-		return api.ErrInvalidSession
-	}
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
 
 	if err := c.service.DeleteUser(r.Context(), userUID); err != nil {
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
