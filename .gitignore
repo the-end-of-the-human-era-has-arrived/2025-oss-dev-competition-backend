@@ -4,3 +4,5 @@ bin/
 CLAUDE.md
 
 .env
+
+server_start.sh
