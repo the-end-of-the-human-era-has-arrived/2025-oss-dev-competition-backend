@@ -61,7 +61,7 @@ func (c *userController) createUser(w http.ResponseWriter, r *http.Request) erro
 		HttpOnly: true,
 	})
 
-	return api.ResponseStatusCode(w, http.StatusCreated, "success to create user")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusCreated, "success to create user")
 }
 
 func (c *userController) getUser(w http.ResponseWriter, r *http.Request) error {
@@ -82,7 +82,7 @@ func (c *userController) getUser(w http.ResponseWriter, r *http.Request) error {
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseJSON(w, user)
+	return api.ResponseJSON(r.Context(), w, user)
 }
 
 func (c *userController) updateUser(w http.ResponseWriter, r *http.Request) error {
@@ -110,7 +110,7 @@ func (c *userController) updateUser(w http.ResponseWriter, r *http.Request) erro
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseStatusCode(w, http.StatusOK, "success to update user")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusOK, "success to update user")
 }
 
 func (c *userController) updateUserTokens(w http.ResponseWriter, r *http.Request) error {
@@ -139,7 +139,7 @@ func (c *userController) updateUserTokens(w http.ResponseWriter, r *http.Request
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseStatusCode(w, http.StatusOK, "success to update tokens")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusOK, "success to update tokens")
 }
 
 func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) error {
@@ -159,5 +159,5 @@ func (c *userController) deleteUser(w http.ResponseWriter, r *http.Request) erro
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseStatusCode(w, http.StatusOK, "success to delete user")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusOK, "success to delete user")
 }

@@ -145,8 +145,8 @@ func (c *authController) processNotionAuthCallback(w http.ResponseWriter, r *htt
 		HttpOnly: true,
 	})
 
-    http.Redirect(w, r, "http://localhost:3000/?auth=success", http.StatusTemporaryRedirect)
-    return nil
+	http.Redirect(w, r, "http://localhost:3000/?auth=success", http.StatusTemporaryRedirect)
+	return nil
 }
 
 func (c *authController) requestToken(code, redirectURI string) (*api.Token, error) {
@@ -239,5 +239,5 @@ func (c *authController) getSessionStatus(w http.ResponseWriter, r *http.Request
 		"notion_user_id": session.NotionUserID,
 	}
 
-	return api.ResponseJSON(w, response)
+	return api.ResponseJSON(r.Context(), w, response)
 }

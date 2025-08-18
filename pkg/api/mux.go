@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -25,17 +26,17 @@ type (
 )
 
 func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    // CORS 헤더 설정 (모든 요청에 적용)
-    w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-    w.Header().Set("Access-Control-Allow-Credentials", "true")
-    w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+	// CORS 헤더 설정 (모든 요청에 적용)
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-    // OPTIONS 요청 (preflight) 처리
-    if r.Method == "OPTIONS" {
-        w.WriteHeader(http.StatusOK)
-        return
-    }
+	// OPTIONS 요청 (preflight) 처리
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	_, pattern := m.mux.Handler(r)
 	path := extractPath(pattern)
@@ -49,6 +50,7 @@ func (m *APIServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ErrFailToCreateRequestID.WriteHTTPError(w)
 		return
 	}
+	log.Println(r.Method, r.URL.Path, "requestID: ", requestID.String())
 
 	ctx := context.WithValue(r.Context(), RequestIDKey{}, requestID)
 
@@ -86,10 +88,14 @@ func WithErrorHandler(handlerFn HandlerFunc) func(w http.ResponseWriter, r *http
 		apiError := &Error{}
 		err := handlerFn(w, r)
 		if errors.As(err, apiError) {
+			if requestID, ok := r.Context().Value(RequestIDKey{}).(uuid.UUID); ok {
+				log.Printf("requestID: %s, result: %+v", requestID.String(), *apiError)
+			}
 			apiError.WriteHTTPError(w)
 			return
 		}
 		if err != nil {
+			log.Printf("result: %+v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

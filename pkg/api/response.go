@@ -1,8 +1,12 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"log"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type HTTPResponse struct {
@@ -11,13 +15,15 @@ type HTTPResponse struct {
 	Message    string `json:"message"`
 }
 
-func ResponseStatusCode(w http.ResponseWriter, statusCode int, msg string) error {
+func ResponseStatusCode(ctx context.Context, w http.ResponseWriter, statusCode int, msg string) error {
 	httpResp := &HTTPResponse{
 		StatusCode: statusCode,
 		StatusText: http.StatusText(statusCode),
 		Message:    msg,
 	}
 
+	requestID := ctx.Value(RequestIDKey{}).(uuid.UUID)
+	log.Printf("requestID: %s, result: %+v", requestID.String(), *httpResp)
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(httpResp); err != nil {
@@ -26,7 +32,9 @@ func ResponseStatusCode(w http.ResponseWriter, statusCode int, msg string) error
 	return nil
 }
 
-func ResponseJSON(w http.ResponseWriter, v any) error {
+func ResponseJSON(ctx context.Context, w http.ResponseWriter, v any) error {
+	requestID := ctx.Value(RequestIDKey{}).(uuid.UUID)
+	log.Printf("requestID: %s, result: %+v", requestID.String(), v)
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(v); err != nil {

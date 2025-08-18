@@ -61,7 +61,7 @@ func (c *mindMapController) createMindMap(w http.ResponseWriter, r *http.Request
 	if err := c.service.BuildMindMap(r.Context(), userUID, params.Nodes, params.Edges); err != nil {
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
-	return api.ResponseStatusCode(w, http.StatusCreated, "success to create mindmap")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusCreated, "success to create mindmap")
 }
 
 func (c *mindMapController) getMindMap(w http.ResponseWriter, r *http.Request) error {
@@ -79,7 +79,7 @@ func (c *mindMapController) getMindMap(w http.ResponseWriter, r *http.Request) e
 
 	graph := c.service.GetMindMapByUser(r.Context(), userUID)
 
-	return api.ResponseJSON(w, graph)
+	return api.ResponseJSON(r.Context(), w, graph)
 }
 
 func (c *mindMapController) deleteMindMap(w http.ResponseWriter, r *http.Request) error {
@@ -98,5 +98,5 @@ func (c *mindMapController) deleteMindMap(w http.ResponseWriter, r *http.Request
 	if err := c.service.DeleteMindMapByUser(r.Context(), userUID); err != nil {
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
-	return api.ResponseStatusCode(w, http.StatusOK, "success to delete mindmap")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusOK, "success to delete mindmap")
 }

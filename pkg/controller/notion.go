@@ -2,6 +2,8 @@ package controller
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -35,6 +37,8 @@ func (c *notionPageController) ListAPIs() []*api.API {
 
 func (c *notionPageController) createNotionPage(w http.ResponseWriter, r *http.Request) error {
 	userID := r.PathValue("userID")
+	requestID := r.Context().Value(api.RequestIDKey{}).(uuid.UUID)
+	log.Println("requestID:", requestID.String(), "userID:", userID)
 
 	userUID, err := uuid.Parse(userID)
 	if err != nil {
@@ -45,12 +49,18 @@ func (c *notionPageController) createNotionPage(w http.ResponseWriter, r *http.R
 	// if session.UserID != userUID {
 	// 	return api.ErrInvalidSession
 	// }
-
-	param := &domain.NotionPage{}
-	if err := json.NewDecoder(r.Body).Decode(param); err != nil {
-		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 	defer r.Body.Close()
+
+	log.Println("requestID:", requestID.String(), "body:", string(body))
+
+	param := &domain.NotionPage{}
+	if err := json.Unmarshal(body, &param); err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
 
 	param.UserID = userUID
 
@@ -59,7 +69,7 @@ func (c *notionPageController) createNotionPage(w http.ResponseWriter, r *http.R
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseJSON(w, page)
+	return api.ResponseJSON(r.Context(), w, page)
 }
 
 func (c *notionPageController) getAllNotionPages(w http.ResponseWriter, r *http.Request) error {
@@ -80,7 +90,7 @@ func (c *notionPageController) getAllNotionPages(w http.ResponseWriter, r *http.
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseJSON(w, pages)
+	return api.ResponseJSON(r.Context(), w, pages)
 }
 
 func (c *notionPageController) getNotionPage(w http.ResponseWriter, r *http.Request) error {
@@ -111,7 +121,7 @@ func (c *notionPageController) getNotionPage(w http.ResponseWriter, r *http.Requ
 		return api.NewError(http.StatusForbidden, api.WithMessage("access denied"))
 	}
 
-	return api.ResponseJSON(w, page)
+	return api.ResponseJSON(r.Context(), w, page)
 }
 
 func (c *notionPageController) updateNotionPage(w http.ResponseWriter, r *http.Request) error {
@@ -147,7 +157,7 @@ func (c *notionPageController) updateNotionPage(w http.ResponseWriter, r *http.R
 		return api.NewError(http.StatusInternalServerError, api.WithError(err))
 	}
 
-	return api.ResponseJSON(w, page)
+	return api.ResponseJSON(r.Context(), w, page)
 }
 
 func (c *notionPageController) deleteNotionPage(w http.ResponseWriter, r *http.Request) error {
@@ -178,5 +188,5 @@ func (c *notionPageController) deleteNotionPage(w http.ResponseWriter, r *http.R
 		return api.NewError(http.StatusForbidden, api.WithMessage("access denied"))
 	}
 
-	return api.ResponseStatusCode(w, http.StatusOK, "success to delete notion page")
+	return api.ResponseStatusCode(r.Context(), w, http.StatusOK, "success to delete notion page")
 }
