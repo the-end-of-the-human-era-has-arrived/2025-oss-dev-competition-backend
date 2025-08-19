@@ -31,6 +31,18 @@ func (s *NotionPageService) CreateNotionPage(
 	return createdPage, nil
 }
 
+func (s *NotionPageService) CreateNotionPages(
+	ctx context.Context,
+	pages []*domain.NotionPage,
+) ([]*domain.NotionPage, error) {
+	createdPages, err := s.repo.CreateNotionPages(ctx, pages)
+	if err != nil {
+		return nil, err
+	}
+
+	return createdPages, nil
+}
+
 func (s *NotionPageService) GetAllNotionPagesByUser(
 	ctx context.Context,
 	userID uuid.UUID,

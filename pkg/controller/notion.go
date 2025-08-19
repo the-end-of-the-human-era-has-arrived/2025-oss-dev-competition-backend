@@ -28,6 +28,7 @@ var _ api.APIGroup = (*notionPageController)(nil)
 func (c *notionPageController) ListAPIs() []*api.API {
 	return []*api.API{
 		api.NewSimpleAPI("POST /api/users/{userID}/notion", c.createNotionPage),
+		api.NewSimpleAPI("POST /api/users/{userID}/notion/bulk", c.createNotionPagesBulk),
 		api.NewSimpleAPI("GET /api/users/{userID}/notion", c.getAllNotionPages),
 		api.NewSimpleAPI("GET /api/users/{userID}/notion/{notionPageID}", c.getNotionPage),
 		api.NewSimpleAPI("PUT /api/users/{userID}/notion/{notionPageID}", c.updateNotionPage),
@@ -70,6 +71,71 @@ func (c *notionPageController) createNotionPage(w http.ResponseWriter, r *http.R
 	}
 
 	return api.ResponseJSON(r.Context(), w, page)
+}
+
+func (c *notionPageController) createNotionPagesBulk(w http.ResponseWriter, r *http.Request) error {
+	userID := r.PathValue("userID")
+	requestID := r.Context().Value(api.RequestIDKey{}).(uuid.UUID)
+	log.Println("requestID:", requestID.String(), "userID:", userID, "bulk create")
+
+	userUID, err := uuid.Parse(userID)
+	if err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	// session := r.Context().Value(api.SessionKey{}).(*api.Session)
+	// if session.UserID != userUID {
+	// 	return api.ErrInvalidSession
+	// }
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return api.NewError(http.StatusInternalServerError, api.WithError(err))
+	}
+	defer r.Body.Close()
+
+	log.Println("requestID:", requestID.String(), "body:", string(body))
+
+	var params []*struct {
+		Content      string `json:"content"`
+		NotionURL    string `json:"notion_url"`
+		NotionPageID string `json:"notion_page_id"`
+		Summary      string `json:"summary"`
+	}
+	if err := json.Unmarshal(body, &params); err != nil {
+		return api.NewError(http.StatusBadRequest, api.WithError(err))
+	}
+
+	pageParams := make([]*domain.NotionPage, len(params))
+	for i, param := range params {
+		if param.NotionPageID == "" {
+			continue
+		}
+
+		pageUID, err := uuid.Parse(param.NotionPageID)
+		if err != nil {
+			continue
+		}
+
+		pageParams[i] = &domain.NotionPage{
+			UserID:       userUID,
+			Content:      param.Content,
+			NotionURL:    param.NotionURL,
+			NotionPageID: pageUID,
+			Summary:      param.Summary,
+		}
+	}
+
+	pages, err := c.service.CreateNotionPages(r.Context(), pageParams)
+	if err != nil {
+		return api.NewError(http.StatusInternalServerError, api.WithError(err))
+	}
+
+	var result struct {
+		Pages []*domain.NotionPage `json:"pages"`
+	}
+	result.Pages = pages
+
+	return api.ResponseJSON(r.Context(), w, result)
 }
 
 func (c *notionPageController) getAllNotionPages(w http.ResponseWriter, r *http.Request) error {

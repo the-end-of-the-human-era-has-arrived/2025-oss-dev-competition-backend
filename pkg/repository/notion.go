@@ -111,6 +111,45 @@ func (r *MemoryNotionPageRepo) CreateNotionPage(
 	return &copied, nil
 }
 
+func (r *MemoryNotionPageRepo) CreateNotionPages(
+	ctx context.Context,
+	pages []*domain.NotionPage,
+) ([]*domain.NotionPage, error) {
+	requestID, ok := ctx.Value(api.RequestIDKey{}).(uuid.UUID)
+	if !ok {
+		return nil, errors.New("not found request id")
+	}
+
+	createdPages := make([]*domain.NotionPage, 0, len(pages))
+	
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	cache, ok := r.caches[requestID]
+	
+	for _, page := range pages {
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return nil, err
+		}
+		page.ID = id
+		copied := *page
+		createdPages = append(createdPages, &copied)
+		
+		if !ok {
+			r.pages[id] = page
+		} else {
+			cache.mu.Lock()
+			cache.pages[id] = page
+			cache.deferedOperation = append(cache.deferedOperation, func() {
+				r.pages[id] = page
+			})
+			cache.mu.Unlock()
+		}
+	}
+	
+	return createdPages, nil
+}
+
 func (r *MemoryNotionPageRepo) FindAllNotionPagesByUser(
 	ctx context.Context,
 	userID uuid.UUID,
